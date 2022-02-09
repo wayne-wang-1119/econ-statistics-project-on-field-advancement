@@ -1,0 +1,112 @@
+---
+title: "Econ Proj"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(startupmsg)
+library(distr) 
+library(ggplot2)
+library(crayon)
+library(extraDistr)
+library(VGAM)
+library(dplyr)
+library(ltm)
+dataset=read.csv("/Users/wayne/Desktop/compiled_dataset_04_24.csv")
+```
+
+
+```{r}
+df=dplyr::select(dataset, field, scope, citations )
+df
+```
+
+```{r}
+muscope=sum(df$scope=="yes")/length(df$scope)
+alt=(df$scope=="yes") 
+df$scope=alt
+df$scope <- as.numeric(df$scope)
+```
+Observable correlation? Is there anyway we can safely estimate how the citation count relates to in/out of scope?
+Since it is a boolean variable for in/out of scope, I used point biserial correlation.
+```{r}
+dftest=dplyr::select(df, field, citations )
+```
+```{r}
+aov(scope~citations,data=df)
+```
+
+```{r}
+df[is.na(df)] <- 0
+cor(df$scope,df$citations)
+```
+The citation count and in/out of scope has a rather weak correlation.
+The magnitude result does not strongly affect the reputation/academic notability in Econ field. However, it does suggest a weak correlation. 
+```{r}
+ggplot(df, aes(x=df$field, y=(df$citations)/(sum(df$citations))))+geom_bar(stat = "identity")+labs(
+        x = "Field",
+        y = "Percentage of Citation")
+```
+```{r}
+devdf=filter(df, field=="Dev")
+cor(devdf$scope, devdf$citations)
+```
+```{r}
+findf=filter(df, field=="Fin")
+cor(findf$scope, findf$citations)
+```
+```{r}
+intldf=filter(df, field=="Intl")
+cor(intldf$scope, intldf$citations)
+```
+```{r}
+iodf=filter(df, field=="IO")
+cor(iodf$scope, iodf$citations)
+```
+```{r}
+labdf=filter(df, field=="Labor")
+cor(labdf$scope, labdf$citations)
+```
+```{r}
+lawdf=filter(df, field=="Law")
+cor(lawdf$scope, lawdf$citations)
+```
+```{r}
+macdf=filter(df, field=="Macro")
+cor(macdf$scope, macdf$citations)
+```
+```{r}
+pubdf=filter(df, field=="Public")
+cor(pubdf$scope, pubdf$citations)
+```
+```{r}
+datatest=data.frame(df %>% group_by(df$field) %>% tally())
+datatest
+```
+```{r}
+data_group <- dftest %>%                                 # Group data
+  group_by(field) %>%
+  dplyr::summarize(gr_sum = sum(citations)) %>% 
+  as.data.frame()
+data_group               
+```
+```{r}
+test<-lm(gr_sum~field,data=data_group)
+anova(test)
+```
+
+
+```{r}
+library(coin)
+t.test(macdf$citations,pubdf$citations)
+```
+```{r}
+data1=filter(dftest, field!="Fin")
+data1=filter(data1, field != "IO")
+kruskal.test(citations~field, data1)
+```
+
